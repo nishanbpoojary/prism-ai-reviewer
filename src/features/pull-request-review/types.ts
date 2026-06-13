@@ -14,3 +14,11 @@ export type MockReviewPreview = {
   summary: string;
   findings: MockReviewFinding[];
 };
+
+export type AnalyzePullRequestSuccessResponse = {
+  review: MockReviewPreview;
+};
+
+export type AnalyzePullRequestErrorResponse = {
+  error: string;
+};
