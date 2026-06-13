@@ -49,3 +49,34 @@ export function MockReviewPreview({ review }: MockReviewPreviewProps) {
     </aside>
   );
 }
+
+type MockReviewEmptyStateProps = {
+  isLoading: boolean;
+};
+
+export function MockReviewEmptyState({ isLoading }: MockReviewEmptyStateProps) {
+  return (
+    <aside className="rounded-xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/70">
+      <div className="flex min-h-80 flex-col justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 p-6 text-center">
+        <div className="mx-auto flex size-12 items-center justify-center rounded-lg bg-white text-sm font-bold text-slate-950 shadow-sm">
+          PR
+        </div>
+        <h2 className="mt-5 text-2xl font-semibold text-slate-950">
+          {isLoading ? "Analyzing pull request..." : "Ready for review"}
+        </h2>
+        <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-slate-600">
+          {isLoading
+            ? "Building a mock summary, risk score, findings, and test plan."
+            : "Paste a GitHub pull request URL to preview the AI review output."}
+        </p>
+        <div className="mx-auto mt-6 h-2 w-40 overflow-hidden rounded-full bg-slate-200">
+          <div
+            className={`h-full rounded-full bg-sky-500 ${
+              isLoading ? "w-3/4" : "w-1/4"
+            }`}
+          />
+        </div>
+      </div>
+    </aside>
+  );
+}
