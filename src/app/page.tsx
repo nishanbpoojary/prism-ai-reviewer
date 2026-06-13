@@ -1,9 +1,4 @@
-import { HeroSection } from "@/features/pull-request-review/components/hero-section";
-import { MockReviewPreview } from "@/features/pull-request-review/components/mock-review-preview";
-import {
-  featureCards,
-  mockReviewPreview,
-} from "@/features/pull-request-review/data/mock-review-data";
+import { PullRequestReviewDemo } from "@/features/pull-request-review/components/pull-request-review-demo";
 
 export default function Home() {
   return (
@@ -21,10 +16,7 @@ export default function Home() {
           </span>
         </header>
 
-        <div className="grid flex-1 items-center gap-12 py-14 lg:grid-cols-[1fr_0.86fr] lg:py-20">
-          <HeroSection features={featureCards} />
-          <MockReviewPreview review={mockReviewPreview} />
-        </div>
+        <PullRequestReviewDemo />
       </section>
     </main>
   );
