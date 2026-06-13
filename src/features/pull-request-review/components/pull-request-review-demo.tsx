@@ -1,85 +1,104 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { HeroSection } from "@/features/pull-request-review/components/hero-section";
 import {
   MockReviewEmptyState,
   MockReviewPreview,
 } from "@/features/pull-request-review/components/mock-review-preview";
-import {
-  featureCards,
-  mockReviewPreview,
-} from "@/features/pull-request-review/data/mock-review-data";
+import { featureCards } from "@/features/pull-request-review/data/mock-review-data";
+import type {
+  AnalyzePullRequestErrorResponse,
+  AnalyzePullRequestSuccessResponse,
+  MockReviewPreview as MockReviewPreviewData,
+} from "@/features/pull-request-review/types";
 
 type AnalysisState = "idle" | "loading" | "complete";
 
-const githubPullRequestUrlPattern =
-  /^https:\/\/github\.com\/[^/\s]+\/[^/\s]+\/pull\/\d+\/?$/;
+function isErrorResponse(value: unknown): value is AnalyzePullRequestErrorResponse {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "error" in value &&
+    typeof (value as { error: unknown }).error === "string"
+  );
+}
 
-function getValidationMessage(prUrl: string) {
-  const trimmedUrl = prUrl.trim();
-
-  if (!trimmedUrl) {
-    return "Paste a GitHub pull request URL before analyzing.";
-  }
-
-  if (!githubPullRequestUrlPattern.test(trimmedUrl)) {
-    return "Use a GitHub pull request URL like https://github.com/owner/repo/pull/123.";
-  }
-
-  return "";
+function isSuccessResponse(
+  value: unknown,
+): value is AnalyzePullRequestSuccessResponse {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "review" in value &&
+    typeof (value as { review: unknown }).review === "object" &&
+    (value as { review: unknown }).review !== null
+  );
 }
 
 export function PullRequestReviewDemo() {
   const [prUrl, setPrUrl] = useState("");
   const [analysisState, setAnalysisState] = useState<AnalysisState>("idle");
   const [validationMessage, setValidationMessage] = useState("");
-  const analysisTimerRef = useRef<number | null>(null);
+  const [review, setReview] = useState<MockReviewPreviewData | null>(null);
 
   const isLoading = analysisState === "loading";
-  const hasCompletedAnalysis = analysisState === "complete";
 
   function handleUrlChange(value: string) {
     setPrUrl(value);
-
-    if (analysisTimerRef.current) {
-      window.clearTimeout(analysisTimerRef.current);
-      analysisTimerRef.current = null;
-    }
 
     if (validationMessage) {
       setValidationMessage("");
     }
 
-    if (hasCompletedAnalysis) {
+    if (review) {
+      setReview(null);
       setAnalysisState("idle");
     }
   }
 
-  function handleAnalyze() {
+  async function handleAnalyze() {
     if (isLoading) {
       return;
     }
 
-    const message = getValidationMessage(prUrl);
-
-    if (message) {
-      setValidationMessage(message);
-      setAnalysisState("idle");
-      return;
-    }
-
     setValidationMessage("");
+    setReview(null);
     setAnalysisState("loading");
 
-    if (analysisTimerRef.current) {
-      window.clearTimeout(analysisTimerRef.current);
-    }
+    try {
+      const response = await fetch("/api/analyze", {
+        body: JSON.stringify({ prUrl }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+      });
 
-    analysisTimerRef.current = window.setTimeout(() => {
+      const data: unknown = await response.json();
+
+      if (!response.ok) {
+        setValidationMessage(
+          isErrorResponse(data)
+            ? data.error
+            : "Something went wrong while analyzing the pull request.",
+        );
+        setAnalysisState("idle");
+        return;
+      }
+
+      if (!isSuccessResponse(data)) {
+        setValidationMessage("The analysis response was not in the expected format.");
+        setAnalysisState("idle");
+        return;
+      }
+
+      setReview(data.review);
       setAnalysisState("complete");
-      analysisTimerRef.current = null;
-    }, 1000);
+    } catch {
+      setValidationMessage("Could not reach the analysis service. Please try again.");
+      setAnalysisState("idle");
+    }
   }
 
   return (
@@ -92,8 +111,8 @@ export function PullRequestReviewDemo() {
         onUrlChange={handleUrlChange}
         prUrl={prUrl}
       />
-      {hasCompletedAnalysis ? (
-        <MockReviewPreview review={mockReviewPreview} />
+      {analysisState === "complete" && review ? (
+        <MockReviewPreview review={review} />
       ) : (
         <MockReviewEmptyState isLoading={isLoading} />
       )}
