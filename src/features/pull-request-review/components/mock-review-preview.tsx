@@ -1,16 +1,27 @@
-import type { MockReviewPreview as MockReviewPreviewData } from "@/features/pull-request-review/types";
+import type {
+  GitHubPullRequestRef,
+  MockReviewPreview as MockReviewPreviewData,
+} from "@/features/pull-request-review/types";
 
 type MockReviewPreviewProps = {
+  pullRequest: GitHubPullRequestRef;
   review: MockReviewPreviewData;
 };
 
-export function MockReviewPreview({ review }: MockReviewPreviewProps) {
+export function MockReviewPreview({
+  pullRequest,
+  review,
+}: MockReviewPreviewProps) {
   return (
     <aside className="rounded-xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/70">
       <div className="flex items-start justify-between gap-4 border-b border-slate-200 pb-5">
         <div>
           <p className="text-sm font-medium text-slate-500">
             Mock Review Preview
+          </p>
+          <p className="mt-2 text-sm font-medium text-sky-700">
+            Analyzing {pullRequest.owner}/{pullRequest.repo} #
+            {pullRequest.pullNumber}
           </p>
           <h2 className="mt-2 text-2xl font-semibold text-slate-950">
             Risk Score: {review.riskScore} / 100

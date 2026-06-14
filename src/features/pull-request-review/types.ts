@@ -15,7 +15,15 @@ export type MockReviewPreview = {
   findings: MockReviewFinding[];
 };
 
+export type GitHubPullRequestRef = {
+  owner: string;
+  repo: string;
+  pullNumber: number;
+  url: string;
+};
+
 export type AnalyzePullRequestSuccessResponse = {
+  pullRequest: GitHubPullRequestRef;
   review: MockReviewPreview;
 };
 

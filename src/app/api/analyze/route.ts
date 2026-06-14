@@ -1,5 +1,8 @@
 import { mockReviewPreview } from "@/features/pull-request-review/data/mock-review-data";
-import { getGithubPullRequestUrlError } from "@/features/pull-request-review/lib/github-pr-url";
+import {
+  getGithubPullRequestUrlError,
+  parseGitHubPullRequestUrl,
+} from "@/features/pull-request-review/lib/github-pr-url";
 import type {
   AnalyzePullRequestErrorResponse,
   AnalyzePullRequestSuccessResponse,
@@ -45,9 +48,22 @@ export async function POST(request: Request) {
     );
   }
 
+  const pullRequest =
+    typeof prUrl === "string" ? parseGitHubPullRequestUrl(prUrl) : null;
+
+  if (!pullRequest) {
+    return Response.json(
+      {
+        error: "Could not parse that GitHub pull request URL.",
+      } satisfies AnalyzePullRequestErrorResponse,
+      { status: 400 },
+    );
+  }
+
   await wait(800);
 
   return Response.json({
+    pullRequest,
     review: mockReviewPreview,
   } satisfies AnalyzePullRequestSuccessResponse);
 }
