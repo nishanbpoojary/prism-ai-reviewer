@@ -52,7 +52,9 @@ function isSuccessResponse(
     response.review !== null &&
     typeof response.pullRequest === "object" &&
     response.pullRequest !== null &&
-    (response.reviewSource === "mock" || response.reviewSource === "openai")
+    (response.reviewSource === "mock" ||
+      response.reviewSource === "openai" ||
+      response.reviewSource === "gemini")
   );
 }
 

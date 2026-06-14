@@ -61,7 +61,7 @@ export type AnalyzePullRequestErrorResponse = {
   error: string;
 };
 
-export type PullRequestReviewSource = "mock" | "openai";
+export type PullRequestReviewSource = "mock" | "openai" | "gemini";
 
 export type GeneratePullRequestReviewInput = {
   pullRequest: GitHubPullRequestRef;
