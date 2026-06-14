@@ -14,6 +14,7 @@ import type {
 } from "@/features/pull-request-review/types";
 
 const geminiReviewModel = "gemini-2.5-flash";
+const geminiReviewerInstructions = `${reviewerInstructions} Keep every field brief enough for the provided JSON schema. Return a complete JSON object only, with no markdown fences and no prose before or after the JSON.`;
 
 const geminiReviewSchema = {
   type: Type.OBJECT,
@@ -67,7 +68,7 @@ const geminiReviewSchema = {
     },
     suggestedPrDescription: {
       type: Type.STRING,
-      maxLength: "360",
+      maxLength: "420",
     },
     reviewerComments: {
       type: Type.ARRAY,
@@ -98,9 +99,9 @@ export async function generateGeminiPullRequestReview(
       model: geminiReviewModel,
       contents: createReviewerPrompt(input),
       config: {
-        systemInstruction: reviewerInstructions,
-        maxOutputTokens: 1500,
-        temperature: 0.2,
+        systemInstruction: geminiReviewerInstructions,
+        maxOutputTokens: 2400,
+        temperature: 0,
         responseMimeType: "application/json",
         responseSchema: geminiReviewSchema,
       },
