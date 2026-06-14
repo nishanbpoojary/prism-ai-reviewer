@@ -3,6 +3,7 @@ import type {
   GitHubPullRequestMetadata,
   GitHubPullRequestRef,
 } from "@/features/pull-request-review/types";
+import { getGitHubToken } from "@/features/pull-request-review/lib/env";
 
 type JsonObject = Record<string, unknown>;
 
@@ -51,7 +52,7 @@ function createGitHubHeaders() {
     "User-Agent": "PRism-AI",
     "X-GitHub-Api-Version": githubApiVersion,
   };
-  const token = process.env.GITHUB_TOKEN?.trim();
+  const token = getGitHubToken();
 
   if (token) {
     headers.Authorization = `Bearer ${token}`;
