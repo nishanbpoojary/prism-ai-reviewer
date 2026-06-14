@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PRism AI
 
-## Getting Started
+PRism AI is an AI-powered pull request review assistant for developers. The app accepts a GitHub pull request URL, fetches real pull request metadata from GitHub, and displays a reviewer-friendly analysis preview. The AI review content is currently mocked while the project is prepared for a future OpenAI integration.
 
-First, run the development server:
+## Tech Stack
+
+- Next.js App Router
+- TypeScript
+- Tailwind CSS
+- GitHub REST API
+- OpenAI API planned for future review generation
+
+## Local Setup
+
+1. Install dependencies:
+
+```bash
+npm install
+```
+
+2. Create a local environment file:
+
+```bash
+cp .env.example .env.local
+```
+
+3. Add any local secrets to `.env.local`.
+
+4. Start the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+5. Open the app:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```txt
+http://localhost:3000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Environment Variables
 
-## Learn More
+```bash
+OPENAI_API_KEY=
+GITHUB_TOKEN=
+```
 
-To learn more about Next.js, take a look at the following resources:
+`OPENAI_API_KEY` is reserved for future AI review generation. The app does not call OpenAI yet.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+`GITHUB_TOKEN` is optional. Public pull requests can work without it, but adding a token helps avoid GitHub API rate limits and will be useful for repositories that require authentication.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Do not commit `.env.local`. It is for local secrets only.
 
-## Deploy on Vercel
+## Current Behavior
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Parses GitHub pull request URLs.
+- Fetches real GitHub PR metadata and changed files.
+- Shows PR title, author, branches, changed files, additions, and deletions.
+- Displays mocked review summary, risk score, and findings.
+- Does not call OpenAI yet.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Verification
+
+Run the standard checks before sharing changes:
+
+```bash
+npm run lint
+npm run build
+```
