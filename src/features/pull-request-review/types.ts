@@ -8,11 +8,16 @@ export type MockReviewFinding = {
   text: string;
 };
 
+export type RiskLevel = "Low" | "Medium" | "High";
+
 export type MockReviewPreview = {
   riskScore: number;
-  riskLevel: string;
+  riskLevel: RiskLevel;
   summary: string;
   findings: MockReviewFinding[];
+  testCases?: string[];
+  suggestedPrDescription?: string;
+  reviewerComments?: string[];
 };
 
 export type GitHubPullRequestRef = {
