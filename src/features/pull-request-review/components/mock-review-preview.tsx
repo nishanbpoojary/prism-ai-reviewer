@@ -1,8 +1,11 @@
+import type { ReactNode } from "react";
 import type {
   GitHubPullRequestMetadata,
   GitHubPullRequestRef,
+  MockReviewFinding,
   MockReviewPreview as MockReviewPreviewData,
   PullRequestReviewSource,
+  RiskLevel,
 } from "@/features/pull-request-review/types";
 
 type MockReviewPreviewProps = {
@@ -12,132 +15,210 @@ type MockReviewPreviewProps = {
   reviewSource: PullRequestReviewSource;
 };
 
+type ReviewListProps = {
+  items: string[];
+  markerClassName?: string;
+};
+
+const reviewSourceLabels: Record<PullRequestReviewSource, string> = {
+  openai: "OpenAI",
+  gemini: "Gemini",
+  mock: "Mock fallback",
+};
+
+const riskLevelClasses: Record<RiskLevel, string> = {
+  Low: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  Medium: "border-amber-200 bg-amber-50 text-amber-700",
+  High: "border-red-200 bg-red-50 text-red-700",
+};
+
+function ReviewSection({
+  children,
+  title,
+}: Readonly<{
+  children: ReactNode;
+  title: string;
+}>) {
+  return (
+    <section className="border-t border-slate-200 px-5 py-4 sm:px-6">
+      <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+        {title}
+      </h3>
+      {children}
+    </section>
+  );
+}
+
+function ReviewList({
+  items,
+  markerClassName = "bg-sky-500",
+}: ReviewListProps) {
+  return (
+    <ul className="mt-3 space-y-2.5">
+      {items.map((item) => (
+        <li className="flex gap-3 text-sm leading-5 text-slate-700" key={item}>
+          <span
+            aria-hidden="true"
+            className={`mt-1.5 size-2 shrink-0 rounded-full ${markerClassName}`}
+          />
+          <span>{item}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function FindingsList({ findings }: { findings: MockReviewFinding[] }) {
+  return (
+    <ul className="mt-3 space-y-2.5">
+      {findings.map((finding) => (
+        <li
+          className="flex gap-3 text-sm leading-5 text-slate-700"
+          key={finding.id}
+        >
+          <span
+            aria-hidden="true"
+            className="mt-1.5 size-2 shrink-0 rounded-full bg-sky-500"
+          />
+          <span>{finding.text}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function StatPill({
+  label,
+  value,
+}: Readonly<{
+  label: string;
+  value: string;
+}>) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">
+      <span className="text-slate-500">{label}</span>
+      <span>{value}</span>
+    </span>
+  );
+}
+
 export function MockReviewPreview({
   metadata,
   pullRequest,
   review,
   reviewSource,
 }: MockReviewPreviewProps) {
-  const reviewSourceLabels: Record<PullRequestReviewSource, string> = {
-    openai: "OpenAI",
-    gemini: "Gemini",
-    mock: "Mock fallback",
-  };
-
   return (
-    <aside className="rounded-xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/70">
-      <div className="flex items-start justify-between gap-4 border-b border-slate-200 pb-5">
-        <div>
-          <p className="text-sm font-medium text-slate-500">
-            Mock Review Preview
+    <aside className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl shadow-slate-200/70">
+      <div className="px-5 py-4 sm:px-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            AI review result
           </p>
-          <p className="mt-1 text-xs font-medium text-slate-500">
+          <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
             Review source: {reviewSourceLabels[reviewSource]}
-          </p>
-          <p className="mt-2 text-sm font-medium text-sky-700">
-            Analyzing {pullRequest.owner}/{pullRequest.repo} #
-            {pullRequest.pullNumber}
-          </p>
-          <h2 className="mt-3 max-w-xl text-xl font-semibold leading-7 text-slate-950">
-            {metadata.title}
-          </h2>
-          <p className="mt-2 text-sm text-slate-600">
-            by {metadata.author} | {metadata.sourceBranch} -&gt;{" "}
-            {metadata.targetBranch}
-          </p>
-          <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">
-              {metadata.changedFiles} changed files
-            </span>
-            <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">
-              +{metadata.additions}
-            </span>
-            <span className="rounded-full bg-red-50 px-3 py-1 text-red-700">
-              -{metadata.deletions}
-            </span>
-          </div>
-          <h2 className="mt-2 text-2xl font-semibold text-slate-950">
-            Risk Score: {review.riskScore} / 100
-          </h2>
+          </span>
         </div>
-        <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-700">
-          {review.riskLevel}
-        </span>
+
+        <p className="mt-4 text-sm font-semibold text-sky-700">
+          {pullRequest.owner}/{pullRequest.repo} #{pullRequest.pullNumber}
+        </p>
+        <h2 className="mt-2 text-balance text-xl font-semibold leading-7 text-slate-950 sm:text-2xl sm:leading-8">
+          {metadata.title}
+        </h2>
+
+        <div className="mt-3 space-y-1.5 text-sm text-slate-600">
+          <p>
+            <span className="font-medium text-slate-800">Author:</span>{" "}
+            {metadata.author}
+          </p>
+          <p>
+            <span className="font-medium text-slate-800">Branches:</span>{" "}
+            <span className="font-medium text-slate-700">
+              {metadata.sourceBranch}
+            </span>{" "}
+            <span aria-label="to">-&gt;</span>{" "}
+            <span className="font-medium text-slate-700">
+              {metadata.targetBranch}
+            </span>
+          </p>
+        </div>
+
+        <div className="mt-3 flex flex-wrap gap-2">
+          <StatPill
+            label="Files"
+            value={metadata.changedFiles.toLocaleString()}
+          />
+          <StatPill label="Added" value={`+${metadata.additions}`} />
+          <StatPill label="Deleted" value={`-${metadata.deletions}`} />
+        </div>
       </div>
 
-      <div className="py-5">
-        <h3 className="text-sm font-semibold uppercase text-slate-500">
-          Summary
-        </h3>
-        <p className="mt-3 text-base leading-7 text-slate-700">
+      <section className="border-t border-slate-200 bg-slate-50 px-5 py-4 sm:px-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Risk assessment
+            </h3>
+            <p className="mt-1 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+              {review.riskScore}
+              <span className="text-xl font-medium text-slate-500">/100</span>
+            </p>
+          </div>
+          <span
+            className={`rounded-full border px-3 py-1 text-sm font-semibold ${riskLevelClasses[review.riskLevel]}`}
+          >
+            {review.riskLevel} risk
+          </span>
+        </div>
+        <div
+          aria-label={`Risk score ${review.riskScore} out of 100`}
+          className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200"
+          role="img"
+        >
+          <div
+            className="h-full rounded-full bg-slate-900"
+            style={{ width: `${review.riskScore}%` }}
+          />
+        </div>
+      </section>
+
+      <ReviewSection title="Summary">
+        <p className="mt-3 max-w-prose text-sm leading-6 text-slate-700 sm:text-base">
           {review.summary}
         </p>
-      </div>
+      </ReviewSection>
 
-      <div className="border-t border-slate-200 pt-5">
-        <h3 className="text-sm font-semibold uppercase text-slate-500">
-          Findings
-        </h3>
-        <ul className="mt-4 space-y-3">
-          {review.findings.map((finding) => (
-            <li
-              className="flex gap-3 text-sm leading-6 text-slate-700"
-              key={finding.id}
-            >
-              <span className="mt-2 size-2 rounded-full bg-sky-500" />
-              <span>{finding.text}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
+      <ReviewSection title="Findings">
+        <FindingsList findings={review.findings} />
+      </ReviewSection>
 
       {review.testCases?.length ? (
-        <div className="mt-5 border-t border-slate-200 pt-5">
-          <h3 className="text-sm font-semibold uppercase text-slate-500">
-            Test Cases
-          </h3>
-          <ul className="mt-4 space-y-3">
-            {review.testCases.map((testCase) => (
-              <li
-                className="flex gap-3 text-sm leading-6 text-slate-700"
-                key={testCase}
-              >
-                <span className="mt-2 size-2 rounded-full bg-emerald-500" />
-                <span>{testCase}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <ReviewSection title="Test cases">
+          <ReviewList
+            items={review.testCases}
+            markerClassName="bg-emerald-500"
+          />
+        </ReviewSection>
       ) : null}
 
       {review.suggestedPrDescription ? (
-        <div className="mt-5 border-t border-slate-200 pt-5">
-          <h3 className="text-sm font-semibold uppercase text-slate-500">
-            Suggested PR Description
-          </h3>
-          <p className="mt-3 text-sm leading-6 text-slate-700">
-            {review.suggestedPrDescription}
-          </p>
-        </div>
+        <ReviewSection title="Suggested PR description">
+          <div className="mt-3 border-l-4 border-slate-300 bg-slate-50 px-3.5 py-2.5">
+            <p className="text-sm leading-5 text-slate-700">
+              {review.suggestedPrDescription}
+            </p>
+          </div>
+        </ReviewSection>
       ) : null}
 
       {review.reviewerComments?.length ? (
-        <div className="mt-5 border-t border-slate-200 pt-5">
-          <h3 className="text-sm font-semibold uppercase text-slate-500">
-            Reviewer Comments
-          </h3>
-          <ul className="mt-4 space-y-3">
-            {review.reviewerComments.map((comment) => (
-              <li
-                className="flex gap-3 text-sm leading-6 text-slate-700"
-                key={comment}
-              >
-                <span className="mt-2 size-2 rounded-full bg-violet-500" />
-                <span>{comment}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <ReviewSection title="Reviewer comments">
+          <ReviewList
+            items={review.reviewerComments}
+            markerClassName="bg-violet-500"
+          />
+        </ReviewSection>
       ) : null}
     </aside>
   );

@@ -9,7 +9,7 @@ import type {
 const maxSummaryLength = 140;
 const maxFindingLength = 120;
 const maxTestCaseLength = 140;
-const maxSuggestedDescriptionLength = 360;
+const maxSuggestedDescriptionLength = 420;
 const maxReviewerCommentLength = 140;
 
 type AiProviderName = "OpenAI" | "Gemini";
@@ -121,7 +121,31 @@ function isStructuredPullRequestReview(
 }
 
 function limitText(value: string, maxLength: number) {
-  return value.trim().slice(0, maxLength);
+  const trimmedValue = value.trim();
+
+  if (trimmedValue.length <= maxLength) {
+    return trimmedValue;
+  }
+
+  const maxContentLength = Math.max(0, maxLength - 3);
+  const clippedValue = trimmedValue.slice(0, maxContentLength).trimEnd();
+  const sentenceBoundary = Math.max(
+    clippedValue.lastIndexOf(". "),
+    clippedValue.lastIndexOf("! "),
+    clippedValue.lastIndexOf("? "),
+  );
+
+  if (sentenceBoundary >= maxContentLength * 0.55) {
+    return clippedValue.slice(0, sentenceBoundary + 1).trim();
+  }
+
+  const wordBoundary = clippedValue.lastIndexOf(" ");
+  const safeValue =
+    wordBoundary >= maxContentLength * 0.65
+      ? clippedValue.slice(0, wordBoundary)
+      : clippedValue;
+
+  return `${safeValue.replace(/[\s,;:.-]+$/g, "")}...`;
 }
 
 function normalizeRiskScore(score: number) {
