@@ -1,5 +1,9 @@
 import { mockReviewPreview } from "@/features/pull-request-review/data/mock-review-data";
 import {
+  fetchGitHubPullRequestMetadata,
+  GitHubPullRequestFetchError,
+} from "@/features/pull-request-review/lib/github-api";
+import {
   getGithubPullRequestUrlError,
   parseGitHubPullRequestUrl,
 } from "@/features/pull-request-review/lib/github-pr-url";
@@ -7,12 +11,6 @@ import type {
   AnalyzePullRequestErrorResponse,
   AnalyzePullRequestSuccessResponse,
 } from "@/features/pull-request-review/types";
-
-function wait(ms: number) {
-  return new Promise<void>((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
 
 function readPrUrl(body: unknown) {
   if (typeof body !== "object" || body === null || !("prUrl" in body)) {
@@ -22,48 +20,59 @@ function readPrUrl(body: unknown) {
   return (body as { prUrl?: unknown }).prUrl;
 }
 
+function createErrorResponse(error: string, status: number) {
+  return Response.json(
+    {
+      error,
+    } satisfies AnalyzePullRequestErrorResponse,
+    { status },
+  );
+}
+
 export async function POST(request: Request) {
   let body: unknown;
 
   try {
     body = await request.json();
   } catch {
-    return Response.json(
-      {
-        error: "Send a JSON body with a prUrl value.",
-      } satisfies AnalyzePullRequestErrorResponse,
-      { status: 400 },
-    );
+    return createErrorResponse("Send a JSON body with a prUrl value.", 400);
   }
 
   const prUrl = readPrUrl(body);
   const validationError = getGithubPullRequestUrlError(prUrl);
 
   if (validationError) {
-    return Response.json(
-      {
-        error: validationError,
-      } satisfies AnalyzePullRequestErrorResponse,
-      { status: 400 },
-    );
+    return createErrorResponse(validationError, 400);
   }
 
   const pullRequest =
     typeof prUrl === "string" ? parseGitHubPullRequestUrl(prUrl) : null;
 
   if (!pullRequest) {
-    return Response.json(
-      {
-        error: "Could not parse that GitHub pull request URL.",
-      } satisfies AnalyzePullRequestErrorResponse,
-      { status: 400 },
+    return createErrorResponse(
+      "Could not parse that GitHub pull request URL.",
+      400,
     );
   }
 
-  await wait(800);
+  let metadata;
+
+  try {
+    metadata = await fetchGitHubPullRequestMetadata(pullRequest);
+  } catch (error) {
+    if (error instanceof GitHubPullRequestFetchError) {
+      return createErrorResponse(error.message, error.status);
+    }
+
+    return createErrorResponse(
+      "Could not analyze that pull request right now. Please try again.",
+      502,
+    );
+  }
 
   return Response.json({
     pullRequest,
+    metadata,
     review: mockReviewPreview,
   } satisfies AnalyzePullRequestSuccessResponse);
 }

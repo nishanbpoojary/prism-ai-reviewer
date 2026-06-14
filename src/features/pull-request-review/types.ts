@@ -22,8 +22,32 @@ export type GitHubPullRequestRef = {
   url: string;
 };
 
+export type GitHubPullRequestFile = {
+  filename: string;
+  status: string;
+  additions: number;
+  deletions: number;
+  changes: number;
+};
+
+export type GitHubPullRequestMetadata = {
+  title: string;
+  body: string;
+  author: string;
+  sourceBranch: string;
+  targetBranch: string;
+  state: string;
+  createdAt: string;
+  updatedAt: string;
+  changedFiles: number;
+  additions: number;
+  deletions: number;
+  files: GitHubPullRequestFile[];
+};
+
 export type AnalyzePullRequestSuccessResponse = {
   pullRequest: GitHubPullRequestRef;
+  metadata: GitHubPullRequestMetadata;
   review: MockReviewPreview;
 };
 
