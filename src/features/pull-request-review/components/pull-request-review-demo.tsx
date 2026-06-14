@@ -10,6 +10,7 @@ import { featureCards } from "@/features/pull-request-review/data/mock-review-da
 import type {
   AnalyzePullRequestErrorResponse,
   AnalyzePullRequestSuccessResponse,
+  GitHubPullRequestRef,
   MockReviewPreview as MockReviewPreviewData,
 } from "@/features/pull-request-review/types";
 
@@ -31,8 +32,11 @@ function isSuccessResponse(
     typeof value === "object" &&
     value !== null &&
     "review" in value &&
+    "pullRequest" in value &&
     typeof (value as { review: unknown }).review === "object" &&
-    (value as { review: unknown }).review !== null
+    (value as { review: unknown }).review !== null &&
+    typeof (value as { pullRequest: unknown }).pullRequest === "object" &&
+    (value as { pullRequest: unknown }).pullRequest !== null
   );
 }
 
@@ -40,6 +44,9 @@ export function PullRequestReviewDemo() {
   const [prUrl, setPrUrl] = useState("");
   const [analysisState, setAnalysisState] = useState<AnalysisState>("idle");
   const [validationMessage, setValidationMessage] = useState("");
+  const [pullRequest, setPullRequest] = useState<GitHubPullRequestRef | null>(
+    null,
+  );
   const [review, setReview] = useState<MockReviewPreviewData | null>(null);
 
   const isLoading = analysisState === "loading";
@@ -52,6 +59,7 @@ export function PullRequestReviewDemo() {
     }
 
     if (review) {
+      setPullRequest(null);
       setReview(null);
       setAnalysisState("idle");
     }
@@ -63,6 +71,7 @@ export function PullRequestReviewDemo() {
     }
 
     setValidationMessage("");
+    setPullRequest(null);
     setReview(null);
     setAnalysisState("loading");
 
@@ -93,6 +102,7 @@ export function PullRequestReviewDemo() {
         return;
       }
 
+      setPullRequest(data.pullRequest);
       setReview(data.review);
       setAnalysisState("complete");
     } catch {
@@ -111,8 +121,8 @@ export function PullRequestReviewDemo() {
         onUrlChange={handleUrlChange}
         prUrl={prUrl}
       />
-      {analysisState === "complete" && review ? (
-        <MockReviewPreview review={review} />
+      {analysisState === "complete" && pullRequest && review ? (
+        <MockReviewPreview pullRequest={pullRequest} review={review} />
       ) : (
         <MockReviewEmptyState isLoading={isLoading} />
       )}
