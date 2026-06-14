@@ -33,6 +33,7 @@ export type GitHubPullRequestFile = {
   additions: number;
   deletions: number;
   changes: number;
+  patch?: string;
 };
 
 export type GitHubPullRequestMetadata = {

@@ -205,6 +205,7 @@ function parsePullRequestFiles(value: unknown): GitHubPullRequestFile[] {
     const additions = readNumber(file, "additions");
     const deletions = readNumber(file, "deletions");
     const changes = readNumber(file, "changes");
+    const patch = readString(file, "patch");
 
     if (
       !filename ||
@@ -225,6 +226,7 @@ function parsePullRequestFiles(value: unknown): GitHubPullRequestFile[] {
       additions,
       deletions,
       changes,
+      ...(patch ? { patch } : {}),
     };
   });
 }

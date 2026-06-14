@@ -2,8 +2,8 @@ import "server-only";
 
 import { GoogleGenAI, Type, type Schema } from "@google/genai";
 import { getGeminiApiKey } from "@/features/pull-request-review/lib/env";
+import { createReviewerPrompt } from "@/features/pull-request-review/lib/review-context";
 import {
-  createReviewerPrompt,
   logAiProviderFailure,
   parseReviewJsonResponse,
   reviewerInstructions,
