@@ -18,8 +18,11 @@ export function MockReviewPreview({
   review,
   reviewSource,
 }: MockReviewPreviewProps) {
-  const reviewSourceLabel =
-    reviewSource === "openai" ? "OpenAI" : "Mock fallback";
+  const reviewSourceLabels: Record<PullRequestReviewSource, string> = {
+    openai: "OpenAI",
+    gemini: "Gemini",
+    mock: "Mock fallback",
+  };
 
   return (
     <aside className="rounded-xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/70">
@@ -29,7 +32,7 @@ export function MockReviewPreview({
             Mock Review Preview
           </p>
           <p className="mt-1 text-xs font-medium text-slate-500">
-            Review source: {reviewSourceLabel}
+            Review source: {reviewSourceLabels[reviewSource]}
           </p>
           <p className="mt-2 text-sm font-medium text-sky-700">
             Analyzing {pullRequest.owner}/{pullRequest.repo} #

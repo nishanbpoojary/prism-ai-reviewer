@@ -12,3 +12,7 @@ export function getOpenAiApiKey() {
 export function getGitHubToken() {
   return readOptionalEnv("GITHUB_TOKEN");
 }
+
+export function getGeminiApiKey() {
+  return readOptionalEnv("GEMINI_API_KEY");
+}
