@@ -2,25 +2,34 @@ import type {
   GitHubPullRequestMetadata,
   GitHubPullRequestRef,
   MockReviewPreview as MockReviewPreviewData,
+  PullRequestReviewSource,
 } from "@/features/pull-request-review/types";
 
 type MockReviewPreviewProps = {
   metadata: GitHubPullRequestMetadata;
   pullRequest: GitHubPullRequestRef;
   review: MockReviewPreviewData;
+  reviewSource: PullRequestReviewSource;
 };
 
 export function MockReviewPreview({
   metadata,
   pullRequest,
   review,
+  reviewSource,
 }: MockReviewPreviewProps) {
+  const reviewSourceLabel =
+    reviewSource === "openai" ? "OpenAI" : "Mock fallback";
+
   return (
     <aside className="rounded-xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/70">
       <div className="flex items-start justify-between gap-4 border-b border-slate-200 pb-5">
         <div>
           <p className="text-sm font-medium text-slate-500">
             Mock Review Preview
+          </p>
+          <p className="mt-1 text-xs font-medium text-slate-500">
+            Review source: {reviewSourceLabel}
           </p>
           <p className="mt-2 text-sm font-medium text-sky-700">
             Analyzing {pullRequest.owner}/{pullRequest.repo} #
@@ -78,6 +87,55 @@ export function MockReviewPreview({
           ))}
         </ul>
       </div>
+
+      {review.testCases?.length ? (
+        <div className="mt-5 border-t border-slate-200 pt-5">
+          <h3 className="text-sm font-semibold uppercase text-slate-500">
+            Test Cases
+          </h3>
+          <ul className="mt-4 space-y-3">
+            {review.testCases.map((testCase) => (
+              <li
+                className="flex gap-3 text-sm leading-6 text-slate-700"
+                key={testCase}
+              >
+                <span className="mt-2 size-2 rounded-full bg-emerald-500" />
+                <span>{testCase}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {review.suggestedPrDescription ? (
+        <div className="mt-5 border-t border-slate-200 pt-5">
+          <h3 className="text-sm font-semibold uppercase text-slate-500">
+            Suggested PR Description
+          </h3>
+          <p className="mt-3 text-sm leading-6 text-slate-700">
+            {review.suggestedPrDescription}
+          </p>
+        </div>
+      ) : null}
+
+      {review.reviewerComments?.length ? (
+        <div className="mt-5 border-t border-slate-200 pt-5">
+          <h3 className="text-sm font-semibold uppercase text-slate-500">
+            Reviewer Comments
+          </h3>
+          <ul className="mt-4 space-y-3">
+            {review.reviewerComments.map((comment) => (
+              <li
+                className="flex gap-3 text-sm leading-6 text-slate-700"
+                key={comment}
+              >
+                <span className="mt-2 size-2 rounded-full bg-violet-500" />
+                <span>{comment}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </aside>
   );
 }

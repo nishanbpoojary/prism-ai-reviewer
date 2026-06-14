@@ -6,23 +6,42 @@ import { getOpenAiApiKey } from "@/features/pull-request-review/lib/env";
 import type {
   GeneratePullRequestReviewInput,
   GeneratePullRequestReviewResult,
-  MockReviewFinding,
   MockReviewPreview,
+  RiskLevel,
 } from "@/features/pull-request-review/types";
 
 const openAiReviewModel = "gpt-5.5";
 const maxSummaryLength = 140;
 const maxFindingLength = 120;
+const maxTestCaseLength = 140;
+const maxSuggestedDescriptionLength = 360;
+const maxReviewerCommentLength = 140;
+
+type OpenAiPullRequestReview = {
+  riskScore: number;
+  riskLevel: RiskLevel;
+  summary: string;
+  findings: string[];
+  testCases: string[];
+  suggestedPrDescription: string;
+  reviewerComments: string[];
+};
 
 const pullRequestReviewSchema = {
   type: "object",
   additionalProperties: false,
-  required: ["riskScore", "riskLevel", "summary", "findings"],
+  required: [
+    "riskScore",
+    "riskLevel",
+    "summary",
+    "findings",
+    "testCases",
+    "suggestedPrDescription",
+    "reviewerComments",
+  ],
   properties: {
     riskScore: {
       type: "number",
-      minimum: 0,
-      maximum: 100,
       description: "Overall risk score from 0 to 100.",
     },
     riskLevel: {
@@ -31,26 +50,26 @@ const pullRequestReviewSchema = {
     },
     summary: {
       type: "string",
-      maxLength: maxSummaryLength,
     },
     findings: {
       type: "array",
-      minItems: 1,
-      maxItems: 5,
       items: {
-        type: "object",
-        additionalProperties: false,
-        required: ["id", "text"],
-        properties: {
-          id: {
-            type: "string",
-            pattern: "^[a-z0-9-]+$",
-          },
-          text: {
-            type: "string",
-            maxLength: maxFindingLength,
-          },
-        },
+        type: "string",
+      },
+    },
+    testCases: {
+      type: "array",
+      items: {
+        type: "string",
+      },
+    },
+    suggestedPrDescription: {
+      type: "string",
+    },
+    reviewerComments: {
+      type: "array",
+      items: {
+        type: "string",
       },
     },
   },
@@ -63,26 +82,21 @@ function createMockReviewResult(): GeneratePullRequestReviewResult {
   };
 }
 
-function isRiskLevel(value: unknown): value is MockReviewPreview["riskLevel"] {
+function isRiskLevel(value: unknown): value is RiskLevel {
   return value === "Low" || value === "Medium" || value === "High";
 }
 
-function isReviewFinding(value: unknown): value is MockReviewFinding {
-  if (typeof value !== "object" || value === null) {
-    return false;
-  }
-
-  const finding = value as { id?: unknown; text?: unknown };
-
+function isNonEmptyStringArray(value: unknown): value is string[] {
   return (
-    typeof finding.id === "string" &&
-    finding.id.trim().length > 0 &&
-    typeof finding.text === "string" &&
-    finding.text.trim().length > 0
+    Array.isArray(value) &&
+    value.length > 0 &&
+    value.every((item) => typeof item === "string" && item.trim().length > 0)
   );
 }
 
-function isPullRequestReview(value: unknown): value is MockReviewPreview {
+function isOpenAiPullRequestReview(
+  value: unknown,
+): value is OpenAiPullRequestReview {
   if (typeof value !== "object" || value === null) {
     return false;
   }
@@ -92,6 +106,9 @@ function isPullRequestReview(value: unknown): value is MockReviewPreview {
     riskLevel?: unknown;
     riskScore?: unknown;
     summary?: unknown;
+    suggestedPrDescription?: unknown;
+    testCases?: unknown;
+    reviewerComments?: unknown;
   };
 
   return (
@@ -102,22 +119,150 @@ function isPullRequestReview(value: unknown): value is MockReviewPreview {
     isRiskLevel(review.riskLevel) &&
     typeof review.summary === "string" &&
     review.summary.trim().length > 0 &&
-    Array.isArray(review.findings) &&
-    review.findings.length > 0 &&
-    review.findings.every(isReviewFinding)
+    isNonEmptyStringArray(review.findings) &&
+    isNonEmptyStringArray(review.testCases) &&
+    typeof review.suggestedPrDescription === "string" &&
+    review.suggestedPrDescription.trim().length > 0 &&
+    isNonEmptyStringArray(review.reviewerComments)
   );
 }
 
-function normalizeReview(review: MockReviewPreview): MockReviewPreview {
+function limitText(value: string, maxLength: number) {
+  return value.trim().slice(0, maxLength);
+}
+
+function normalizeRiskScore(score: number) {
+  return Math.min(100, Math.max(0, Math.round(score)));
+}
+
+function createFindingId(text: string, index: number) {
+  const id = text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48);
+
+  return id || `finding-${index + 1}`;
+}
+
+function normalizeStringList(
+  values: string[],
+  maxItems: number,
+  maxLength: number,
+) {
+  return values
+    .map((value) => limitText(value, maxLength))
+    .filter(Boolean)
+    .slice(0, maxItems);
+}
+
+function normalizeReview(review: OpenAiPullRequestReview): MockReviewPreview {
+  const findings = normalizeStringList(
+    review.findings,
+    5,
+    maxFindingLength,
+  ).map((finding, index) => ({
+    id: createFindingId(finding, index),
+    text: finding,
+  }));
+
   return {
-    riskScore: Math.round(review.riskScore),
+    riskScore: normalizeRiskScore(review.riskScore),
     riskLevel: review.riskLevel,
-    summary: review.summary.trim(),
-    findings: review.findings.slice(0, 5).map((finding, index) => ({
-      id: finding.id.trim() || `finding-${index + 1}`,
-      text: finding.text.trim(),
-    })),
+    summary: limitText(review.summary, maxSummaryLength),
+    findings,
+    testCases: normalizeStringList(review.testCases, 4, maxTestCaseLength),
+    suggestedPrDescription: limitText(
+      review.suggestedPrDescription,
+      maxSuggestedDescriptionLength,
+    ),
+    reviewerComments: normalizeStringList(
+      review.reviewerComments,
+      4,
+      maxReviewerCommentLength,
+    ),
   };
+}
+
+function sanitizeErrorMessage(message: string) {
+  return message.replace(/sk-[a-zA-Z0-9_-]+/g, "[redacted]");
+}
+
+function getErrorField(error: unknown, field: "name" | "message" | "status") {
+  if (typeof error !== "object" || error === null || !(field in error)) {
+    return undefined;
+  }
+
+  return (error as Record<typeof field, unknown>)[field];
+}
+
+function logOpenAiFailure(error: unknown) {
+  const name = getErrorField(error, "name");
+  const message = getErrorField(error, "message");
+  const status = getErrorField(error, "status");
+
+  console.warn("[PRism AI] OpenAI review fallback", {
+    errorName: typeof name === "string" ? name : "UnknownError",
+    errorMessage:
+      typeof message === "string"
+        ? sanitizeErrorMessage(message)
+        : "OpenAI review generation failed.",
+    statusCode: typeof status === "number" ? status : undefined,
+  });
+}
+
+function createStructuredOutputError(message: string) {
+  return {
+    name: "OpenAIStructuredOutputError",
+    message,
+  };
+}
+
+function parseOpenAiReviewResponse(outputText: string) {
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(outputText);
+  } catch {
+    logOpenAiFailure(
+      createStructuredOutputError("Structured response was not valid JSON."),
+    );
+    return null;
+  }
+
+  if (!isOpenAiPullRequestReview(parsed)) {
+    logOpenAiFailure(
+      createStructuredOutputError(
+        "Structured response did not match the expected review shape.",
+      ),
+    );
+    return null;
+  }
+
+  const review = normalizeReview(parsed);
+
+  if (review.findings.length === 0) {
+    logOpenAiFailure(
+      createStructuredOutputError(
+        "Structured response did not include usable findings.",
+      ),
+    );
+    return null;
+  }
+
+  return review;
+}
+
+function createChangedFilesPrompt(input: GeneratePullRequestReviewInput) {
+  const files = input.metadata.files
+    .slice(0, 30)
+    .map(
+      (file) =>
+        `- ${file.filename} (${file.status}, +${file.additions}, -${file.deletions}, ${file.changes} changes)`,
+    )
+    .join("\n");
+
+  return files || input.changedFilesSummary;
 }
 
 function createReviewerPrompt(input: GeneratePullRequestReviewInput) {
@@ -132,7 +277,8 @@ function createReviewerPrompt(input: GeneratePullRequestReviewInput) {
     `Additions: ${input.metadata.additions}`,
     `Deletions: ${input.metadata.deletions}`,
     `Description: ${input.metadata.body || "No pull request description provided."}`,
-    `Files:\n${input.changedFilesSummary}`,
+    "Changed file summaries only. Full patches are not available in this step.",
+    `Files:\n${createChangedFilesPrompt(input)}`,
   ].join("\n");
 }
 
@@ -153,9 +299,9 @@ export async function generatePullRequestReview(
     const response = await client.responses.create({
       model: openAiReviewModel,
       instructions:
-        "You are a senior frontend and code reviewer. Generate a concise, practical pull request review. Focus on risk, correctness, tests, edge cases, and reviewer action items. Return only the structured JSON object.",
+        "You are a senior frontend and code reviewer. Generate a concise, practical pull request review for recruiters and engineering reviewers. Focus on risk, correctness, tests, edge cases, and reviewer action items. Use only the provided PR metadata and changed file summaries. Do not invent code behavior or claim to have seen patches. If details are limited, mention that uncertainty directly. Return only the structured JSON object.",
       input: createReviewerPrompt(input),
-      max_output_tokens: 700,
+      max_output_tokens: 900,
       text: {
         format: {
           type: "json_schema",
@@ -166,17 +312,18 @@ export async function generatePullRequestReview(
       },
     });
 
-    const parsed: unknown = JSON.parse(response.output_text);
+    const review = parseOpenAiReviewResponse(response.output_text);
 
-    if (!isPullRequestReview(parsed)) {
+    if (!review) {
       return createMockReviewResult();
     }
 
     return {
-      review: normalizeReview(parsed),
+      review,
       source: "openai",
     };
-  } catch {
+  } catch (error) {
+    logOpenAiFailure(error);
     return createMockReviewResult();
   }
 }

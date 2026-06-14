@@ -13,6 +13,7 @@ import type {
   GitHubPullRequestMetadata,
   GitHubPullRequestRef,
   MockReviewPreview as MockReviewPreviewData,
+  PullRequestReviewSource,
 } from "@/features/pull-request-review/types";
 
 type AnalysisState = "idle" | "loading" | "complete";
@@ -29,18 +30,29 @@ function isErrorResponse(value: unknown): value is AnalyzePullRequestErrorRespon
 function isSuccessResponse(
   value: unknown,
 ): value is AnalyzePullRequestSuccessResponse {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const response = value as {
+    metadata?: unknown;
+    pullRequest?: unknown;
+    review?: unknown;
+    reviewSource?: unknown;
+  };
+
   return (
-    typeof value === "object" &&
-    value !== null &&
     "metadata" in value &&
     "review" in value &&
     "pullRequest" in value &&
-    typeof (value as { metadata: unknown }).metadata === "object" &&
-    (value as { metadata: unknown }).metadata !== null &&
-    typeof (value as { review: unknown }).review === "object" &&
-    (value as { review: unknown }).review !== null &&
-    typeof (value as { pullRequest: unknown }).pullRequest === "object" &&
-    (value as { pullRequest: unknown }).pullRequest !== null
+    "reviewSource" in value &&
+    typeof response.metadata === "object" &&
+    response.metadata !== null &&
+    typeof response.review === "object" &&
+    response.review !== null &&
+    typeof response.pullRequest === "object" &&
+    response.pullRequest !== null &&
+    (response.reviewSource === "mock" || response.reviewSource === "openai")
   );
 }
 
@@ -55,6 +67,8 @@ export function PullRequestReviewDemo() {
     null,
   );
   const [review, setReview] = useState<MockReviewPreviewData | null>(null);
+  const [reviewSource, setReviewSource] =
+    useState<PullRequestReviewSource | null>(null);
 
   const isLoading = analysisState === "loading";
 
@@ -69,6 +83,7 @@ export function PullRequestReviewDemo() {
       setPullRequest(null);
       setMetadata(null);
       setReview(null);
+      setReviewSource(null);
       setAnalysisState("idle");
     }
   }
@@ -82,6 +97,7 @@ export function PullRequestReviewDemo() {
     setPullRequest(null);
     setMetadata(null);
     setReview(null);
+    setReviewSource(null);
     setAnalysisState("loading");
 
     try {
@@ -114,6 +130,7 @@ export function PullRequestReviewDemo() {
       setPullRequest(data.pullRequest);
       setMetadata(data.metadata);
       setReview(data.review);
+      setReviewSource(data.reviewSource);
       setAnalysisState("complete");
     } catch {
       setValidationMessage("Could not reach the analysis service. Please try again.");
@@ -131,11 +148,16 @@ export function PullRequestReviewDemo() {
         onUrlChange={handleUrlChange}
         prUrl={prUrl}
       />
-      {analysisState === "complete" && pullRequest && metadata && review ? (
+      {analysisState === "complete" &&
+      pullRequest &&
+      metadata &&
+      review &&
+      reviewSource ? (
         <MockReviewPreview
           metadata={metadata}
           pullRequest={pullRequest}
           review={review}
+          reviewSource={reviewSource}
         />
       ) : (
         <MockReviewEmptyState isLoading={isLoading} />
