@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import { ReviewActions } from "@/features/pull-request-review/components/review-actions";
+import { reviewSourceLabels } from "@/features/pull-request-review/lib/review-report";
 import type {
   GitHubPullRequestMetadata,
   GitHubPullRequestRef,
@@ -18,12 +20,6 @@ type MockReviewPreviewProps = {
 type ReviewListProps = {
   items: string[];
   markerClassName?: string;
-};
-
-const reviewSourceLabels: Record<PullRequestReviewSource, string> = {
-  openai: "OpenAI",
-  gemini: "Gemini",
-  mock: "Mock fallback",
 };
 
 const riskLevelClasses: Record<RiskLevel, string> = {
@@ -152,6 +148,13 @@ export function MockReviewPreview({
           <StatPill label="Added" value={`+${metadata.additions}`} />
           <StatPill label="Deleted" value={`-${metadata.deletions}`} />
         </div>
+
+        <ReviewActions
+          metadata={metadata}
+          pullRequest={pullRequest}
+          review={review}
+          reviewSource={reviewSource}
+        />
       </div>
 
       <section className="border-t border-slate-200 bg-slate-50 px-5 py-4 sm:px-6">
