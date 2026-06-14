@@ -45,6 +45,21 @@ function createChangedFilesSummary(
     .join("\n");
 }
 
+function createClientMetadata(
+  metadata: AnalyzePullRequestSuccessResponse["metadata"],
+) {
+  return {
+    ...metadata,
+    files: metadata.files.map((file) => ({
+      filename: file.filename,
+      status: file.status,
+      additions: file.additions,
+      deletions: file.deletions,
+      changes: file.changes,
+    })),
+  };
+}
+
 export async function POST(request: Request) {
   let body: unknown;
 
@@ -94,7 +109,7 @@ export async function POST(request: Request) {
 
   return Response.json({
     pullRequest,
-    metadata,
+    metadata: createClientMetadata(metadata),
     review: reviewResult.review,
     reviewSource: reviewResult.source,
   } satisfies AnalyzePullRequestSuccessResponse);

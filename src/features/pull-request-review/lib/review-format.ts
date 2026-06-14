@@ -1,7 +1,6 @@
 import "server-only";
 
 import type {
-  GeneratePullRequestReviewInput,
   MockReviewPreview,
   RiskLevel,
 } from "@/features/pull-request-review/types";
@@ -25,7 +24,7 @@ type StructuredPullRequestReview = {
 };
 
 export const reviewerInstructions =
-  "You are a senior frontend and code reviewer. Generate a concise, practical pull request review for recruiters and engineering reviewers. Focus on risk, correctness, tests, edge cases, and reviewer action items. Use only the provided PR metadata and changed file summaries. Do not invent code behavior or claim to have seen patches. If details are limited, mention that uncertainty directly. Return only the structured JSON object.";
+  "You are a senior frontend and code reviewer. Generate a concise, practical pull request review for recruiters and engineering reviewers. Review only the provided PR metadata and limited diff snippets. Do not claim to inspect the full repository or files that are not included. Mention uncertainty when snippets are limited or patch context is missing. Focus on correctness, edge cases, tests, security, maintainability, and frontend impact. Return only the structured JSON object.";
 
 export const pullRequestReviewJsonSchema = {
   type: "object",
@@ -312,31 +311,3 @@ export function parseReviewJsonResponse(
   return review;
 }
 
-function createChangedFilesPrompt(input: GeneratePullRequestReviewInput) {
-  const files = input.metadata.files
-    .slice(0, 30)
-    .map(
-      (file) =>
-        `- ${file.filename} (${file.status}, +${file.additions}, -${file.deletions}, ${file.changes} changes)`,
-    )
-    .join("\n");
-
-  return files || input.changedFilesSummary;
-}
-
-export function createReviewerPrompt(input: GeneratePullRequestReviewInput) {
-  return [
-    `Repository: ${input.pullRequest.owner}/${input.pullRequest.repo}`,
-    `Pull request: #${input.pullRequest.pullNumber}`,
-    `Title: ${input.metadata.title}`,
-    `Author: ${input.metadata.author}`,
-    `State: ${input.metadata.state}`,
-    `Branches: ${input.metadata.sourceBranch} -> ${input.metadata.targetBranch}`,
-    `Changed files: ${input.metadata.changedFiles}`,
-    `Additions: ${input.metadata.additions}`,
-    `Deletions: ${input.metadata.deletions}`,
-    `Description: ${input.metadata.body || "No pull request description provided."}`,
-    "Changed file summaries only. Full patches are not available in this step.",
-    `Files:\n${createChangedFilesPrompt(input)}`,
-  ].join("\n");
-}

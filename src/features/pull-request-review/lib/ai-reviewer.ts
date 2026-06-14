@@ -4,8 +4,8 @@ import OpenAI from "openai";
 import { mockReviewPreview } from "@/features/pull-request-review/data/mock-review-data";
 import { getOpenAiApiKey } from "@/features/pull-request-review/lib/env";
 import { generateGeminiPullRequestReview } from "@/features/pull-request-review/lib/gemini-reviewer";
+import { createReviewerPrompt } from "@/features/pull-request-review/lib/review-context";
 import {
-  createReviewerPrompt,
   logAiProviderFailure,
   parseReviewJsonResponse,
   pullRequestReviewJsonSchema,
