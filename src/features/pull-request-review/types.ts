@@ -49,8 +49,22 @@ export type AnalyzePullRequestSuccessResponse = {
   pullRequest: GitHubPullRequestRef;
   metadata: GitHubPullRequestMetadata;
   review: MockReviewPreview;
+  reviewSource: PullRequestReviewSource;
 };
 
 export type AnalyzePullRequestErrorResponse = {
   error: string;
+};
+
+export type PullRequestReviewSource = "mock" | "openai";
+
+export type GeneratePullRequestReviewInput = {
+  pullRequest: GitHubPullRequestRef;
+  metadata: GitHubPullRequestMetadata;
+  changedFilesSummary: string;
+};
+
+export type GeneratePullRequestReviewResult = {
+  review: MockReviewPreview;
+  source: PullRequestReviewSource;
 };

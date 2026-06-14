@@ -1,4 +1,4 @@
-import { mockReviewPreview } from "@/features/pull-request-review/data/mock-review-data";
+import { generatePullRequestReview } from "@/features/pull-request-review/lib/ai-reviewer";
 import {
   fetchGitHubPullRequestMetadata,
   GitHubPullRequestFetchError,
@@ -27,6 +27,22 @@ function createErrorResponse(error: string, status: number) {
     } satisfies AnalyzePullRequestErrorResponse,
     { status },
   );
+}
+
+function createChangedFilesSummary(
+  metadata: AnalyzePullRequestSuccessResponse["metadata"],
+) {
+  if (metadata.files.length === 0) {
+    return "No changed files returned by GitHub.";
+  }
+
+  return metadata.files
+    .slice(0, 30)
+    .map(
+      (file) =>
+        `- ${file.filename} (${file.status}, +${file.additions}, -${file.deletions}, ${file.changes} changes)`,
+    )
+    .join("\n");
 }
 
 export async function POST(request: Request) {
@@ -70,9 +86,16 @@ export async function POST(request: Request) {
     );
   }
 
+  const reviewResult = await generatePullRequestReview({
+    pullRequest,
+    metadata,
+    changedFilesSummary: createChangedFilesSummary(metadata),
+  });
+
   return Response.json({
     pullRequest,
     metadata,
-    review: mockReviewPreview,
+    review: reviewResult.review,
+    reviewSource: reviewResult.source,
   } satisfies AnalyzePullRequestSuccessResponse);
 }
