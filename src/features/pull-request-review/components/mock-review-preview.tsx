@@ -1,14 +1,17 @@
 import type {
+  GitHubPullRequestMetadata,
   GitHubPullRequestRef,
   MockReviewPreview as MockReviewPreviewData,
 } from "@/features/pull-request-review/types";
 
 type MockReviewPreviewProps = {
+  metadata: GitHubPullRequestMetadata;
   pullRequest: GitHubPullRequestRef;
   review: MockReviewPreviewData;
 };
 
 export function MockReviewPreview({
+  metadata,
   pullRequest,
   review,
 }: MockReviewPreviewProps) {
@@ -23,6 +26,24 @@ export function MockReviewPreview({
             Analyzing {pullRequest.owner}/{pullRequest.repo} #
             {pullRequest.pullNumber}
           </p>
+          <h2 className="mt-3 max-w-xl text-xl font-semibold leading-7 text-slate-950">
+            {metadata.title}
+          </h2>
+          <p className="mt-2 text-sm text-slate-600">
+            by {metadata.author} | {metadata.sourceBranch} -&gt;{" "}
+            {metadata.targetBranch}
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">
+              {metadata.changedFiles} changed files
+            </span>
+            <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">
+              +{metadata.additions}
+            </span>
+            <span className="rounded-full bg-red-50 px-3 py-1 text-red-700">
+              -{metadata.deletions}
+            </span>
+          </div>
           <h2 className="mt-2 text-2xl font-semibold text-slate-950">
             Risk Score: {review.riskScore} / 100
           </h2>

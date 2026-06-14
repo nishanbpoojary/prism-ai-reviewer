@@ -18,7 +18,7 @@ export function parseGitHubPullRequestUrl(
   const [, owner, repo, pullNumberValue] = match;
   const pullNumber = Number(pullNumberValue);
 
-  if (!Number.isSafeInteger(pullNumber)) {
+  if (!Number.isSafeInteger(pullNumber) || pullNumber < 1) {
     return null;
   }
 

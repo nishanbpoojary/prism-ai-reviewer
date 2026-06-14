@@ -10,6 +10,7 @@ import { featureCards } from "@/features/pull-request-review/data/mock-review-da
 import type {
   AnalyzePullRequestErrorResponse,
   AnalyzePullRequestSuccessResponse,
+  GitHubPullRequestMetadata,
   GitHubPullRequestRef,
   MockReviewPreview as MockReviewPreviewData,
 } from "@/features/pull-request-review/types";
@@ -31,8 +32,11 @@ function isSuccessResponse(
   return (
     typeof value === "object" &&
     value !== null &&
+    "metadata" in value &&
     "review" in value &&
     "pullRequest" in value &&
+    typeof (value as { metadata: unknown }).metadata === "object" &&
+    (value as { metadata: unknown }).metadata !== null &&
     typeof (value as { review: unknown }).review === "object" &&
     (value as { review: unknown }).review !== null &&
     typeof (value as { pullRequest: unknown }).pullRequest === "object" &&
@@ -45,6 +49,9 @@ export function PullRequestReviewDemo() {
   const [analysisState, setAnalysisState] = useState<AnalysisState>("idle");
   const [validationMessage, setValidationMessage] = useState("");
   const [pullRequest, setPullRequest] = useState<GitHubPullRequestRef | null>(
+    null,
+  );
+  const [metadata, setMetadata] = useState<GitHubPullRequestMetadata | null>(
     null,
   );
   const [review, setReview] = useState<MockReviewPreviewData | null>(null);
@@ -60,6 +67,7 @@ export function PullRequestReviewDemo() {
 
     if (review) {
       setPullRequest(null);
+      setMetadata(null);
       setReview(null);
       setAnalysisState("idle");
     }
@@ -72,6 +80,7 @@ export function PullRequestReviewDemo() {
 
     setValidationMessage("");
     setPullRequest(null);
+    setMetadata(null);
     setReview(null);
     setAnalysisState("loading");
 
@@ -103,6 +112,7 @@ export function PullRequestReviewDemo() {
       }
 
       setPullRequest(data.pullRequest);
+      setMetadata(data.metadata);
       setReview(data.review);
       setAnalysisState("complete");
     } catch {
@@ -121,8 +131,12 @@ export function PullRequestReviewDemo() {
         onUrlChange={handleUrlChange}
         prUrl={prUrl}
       />
-      {analysisState === "complete" && pullRequest && review ? (
-        <MockReviewPreview pullRequest={pullRequest} review={review} />
+      {analysisState === "complete" && pullRequest && metadata && review ? (
+        <MockReviewPreview
+          metadata={metadata}
+          pullRequest={pullRequest}
+          review={review}
+        />
       ) : (
         <MockReviewEmptyState isLoading={isLoading} />
       )}
