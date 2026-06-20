@@ -28,7 +28,7 @@ type FeedbackMessage =
   | "Action failed";
 
 const actionButtonClassName =
-  "rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
+  "rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 lg:px-2 lg:py-1 lg:text-[0.7rem]";
 
 export function ReviewActions({
   metadata,
@@ -99,8 +99,8 @@ export function ReviewActions({
   }
 
   return (
-    <div className="mt-3">
-      <div className="flex flex-wrap gap-2">
+    <div className="mt-2">
+      <div className="flex flex-wrap gap-1.5">
         <button
           className={actionButtonClassName}
           onClick={() => copyText(markdownReport, "Copied report")}
@@ -144,7 +144,7 @@ export function ReviewActions({
 
       <p
         aria-live="polite"
-        className="mt-2 min-h-4 text-xs font-medium text-slate-500"
+        className="mt-1 min-h-3 text-xs font-medium text-slate-500"
       >
         {feedbackMessage}
       </p>

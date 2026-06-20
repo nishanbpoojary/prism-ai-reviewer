@@ -1,12 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { HeroSection } from "@/features/pull-request-review/components/hero-section";
 import {
   MockReviewEmptyState,
   MockReviewPreview,
 } from "@/features/pull-request-review/components/mock-review-preview";
 import { featureCards } from "@/features/pull-request-review/data/mock-review-data";
+import {
+  clearRecentReviewHistory,
+  createRecentReviewHistoryItem,
+  readRecentReviewHistory,
+  saveRecentReviewHistoryItem,
+} from "@/features/pull-request-review/lib/review-history";
 import type {
   AnalyzePullRequestErrorResponse,
   AnalyzePullRequestSuccessResponse,
@@ -14,6 +20,7 @@ import type {
   GitHubPullRequestRef,
   MockReviewPreview as MockReviewPreviewData,
   PullRequestReviewSource,
+  RecentReviewHistoryItem,
 } from "@/features/pull-request-review/types";
 
 type AnalysisState = "idle" | "loading" | "complete";
@@ -71,8 +78,27 @@ export function PullRequestReviewDemo() {
   const [review, setReview] = useState<MockReviewPreviewData | null>(null);
   const [reviewSource, setReviewSource] =
     useState<PullRequestReviewSource | null>(null);
+  const [reviewHistory, setReviewHistory] = useState<
+    RecentReviewHistoryItem[]
+  >([]);
 
   const isLoading = analysisState === "loading";
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setReviewHistory(readRecentReviewHistory());
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, []);
+
+  function resetReviewResult() {
+    setPullRequest(null);
+    setMetadata(null);
+    setReview(null);
+    setReviewSource(null);
+    setAnalysisState("idle");
+  }
 
   function handleUrlChange(value: string) {
     setPrUrl(value);
@@ -82,12 +108,21 @@ export function PullRequestReviewDemo() {
     }
 
     if (review) {
-      setPullRequest(null);
-      setMetadata(null);
-      setReview(null);
-      setReviewSource(null);
-      setAnalysisState("idle");
+      resetReviewResult();
     }
+  }
+
+  function handleHistoryItemSelect(value: string) {
+    setPrUrl(value);
+    setValidationMessage("");
+
+    if (review) {
+      resetReviewResult();
+    }
+  }
+
+  function handleClearHistory() {
+    setReviewHistory(clearRecentReviewHistory());
   }
 
   async function handleAnalyze() {
@@ -133,6 +168,16 @@ export function PullRequestReviewDemo() {
       setMetadata(data.metadata);
       setReview(data.review);
       setReviewSource(data.reviewSource);
+      setReviewHistory(
+        saveRecentReviewHistoryItem(
+          createRecentReviewHistoryItem({
+            metadata: data.metadata,
+            pullRequest: data.pullRequest,
+            review: data.review,
+            reviewSource: data.reviewSource,
+          }),
+        ),
+      );
       setAnalysisState("complete");
     } catch {
       setValidationMessage("Could not reach the analysis service. Please try again.");
@@ -141,12 +186,15 @@ export function PullRequestReviewDemo() {
   }
 
   return (
-    <div className="grid flex-1 items-center gap-12 py-14 lg:grid-cols-[1fr_0.86fr] lg:py-20">
+    <div className="grid items-start gap-8 py-10 lg:grid-cols-[minmax(0,1fr)_minmax(380px,0.88fr)] lg:gap-7 lg:py-12 xl:gap-9">
       <HeroSection
         errorMessage={validationMessage}
         features={featureCards}
+        history={reviewHistory}
         isLoading={isLoading}
         onAnalyze={handleAnalyze}
+        onClearHistory={handleClearHistory}
+        onSelectHistoryItem={handleHistoryItemSelect}
         onUrlChange={handleUrlChange}
         prUrl={prUrl}
       />

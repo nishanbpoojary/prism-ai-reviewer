@@ -14,9 +14,9 @@ export function PrInputCard({
   prUrl,
 }: PrInputCardProps) {
   return (
-    <div className="mt-8 w-full max-w-2xl">
+    <div className="mt-5 w-full max-w-2xl lg:mt-4">
       <form
-        className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:flex-row"
+        className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:flex-row lg:p-2.5"
         noValidate
         onSubmit={(event) => {
           event.preventDefault();
@@ -30,14 +30,14 @@ export function PrInputCard({
           aria-describedby={errorMessage ? "pr-url-error" : undefined}
           aria-invalid={Boolean(errorMessage)}
           id="pr-url"
-          className="min-h-12 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-4 text-base text-slate-950 outline-none transition focus:border-sky-400 focus:bg-white focus:ring-4 focus:ring-sky-100"
+          className="min-h-12 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-4 text-base text-slate-950 outline-none transition focus:border-sky-400 focus:bg-white focus:ring-4 focus:ring-sky-100 lg:min-h-11"
           onChange={(event) => onUrlChange(event.target.value)}
           placeholder="Paste GitHub PR URL"
           type="text"
           value={prUrl}
         />
         <button
-          className="min-h-12 rounded-lg bg-slate-950 px-5 text-sm font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-300 disabled:cursor-not-allowed disabled:bg-slate-400"
+          className="min-h-12 rounded-lg bg-slate-950 px-5 text-sm font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-300 disabled:cursor-not-allowed disabled:bg-slate-400 lg:min-h-11"
           disabled={isLoading}
           type="submit"
         >
@@ -45,7 +45,7 @@ export function PrInputCard({
         </button>
       </form>
       {errorMessage ? (
-        <p className="mt-3 text-sm font-medium text-red-600" id="pr-url-error">
+        <p className="mt-2 text-sm font-medium text-red-600" id="pr-url-error">
           {errorMessage}
         </p>
       ) : null}
