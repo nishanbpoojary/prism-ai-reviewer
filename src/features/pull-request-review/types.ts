@@ -64,6 +64,17 @@ export type AnalyzePullRequestErrorResponse = {
 
 export type PullRequestReviewSource = "mock" | "openai" | "gemini";
 
+export type RecentReviewHistoryItem = {
+  prUrl: string;
+  repositoryName: string;
+  prNumber: number;
+  prTitle: string;
+  riskScore: number;
+  riskLevel: RiskLevel;
+  reviewSource: PullRequestReviewSource;
+  analyzedAt: string;
+};
+
 export type GeneratePullRequestReviewInput = {
   pullRequest: GitHubPullRequestRef;
   metadata: GitHubPullRequestMetadata;

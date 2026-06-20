@@ -6,11 +6,13 @@ type FeatureCardProps = {
 
 export function FeatureCard({ feature }: FeatureCardProps) {
   return (
-    <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-      <h2 className="text-base font-semibold text-slate-950">
+    <article className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm lg:p-3.5 xl:p-5">
+      <h2 className="text-sm font-semibold text-slate-950 xl:text-base">
         {feature.title}
       </h2>
-      <p className="mt-2 text-sm leading-6 text-slate-600">{feature.text}</p>
+      <p className="mt-1.5 text-sm leading-5 text-slate-600 xl:mt-2 xl:leading-6">
+        {feature.text}
+      </p>
     </article>
   );
 }
