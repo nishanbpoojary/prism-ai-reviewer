@@ -4,11 +4,13 @@ import { useId, useState, type ReactNode } from "react";
 import { ReviewActions } from "@/features/pull-request-review/components/review-actions";
 import { reviewSourceLabels } from "@/features/pull-request-review/lib/review-report";
 import type {
+  ChecklistStatus,
   GitHubPullRequestMetadata,
   GitHubPullRequestRef,
   MockReviewFinding,
   MockReviewPreview as MockReviewPreviewData,
   PullRequestReviewSource,
+  ReviewChecklistItem,
   RiskLevel,
 } from "@/features/pull-request-review/types";
 
@@ -30,6 +32,18 @@ const riskLevelClasses: Record<RiskLevel, string> = {
   High: "border-red-200 bg-red-50 text-red-700",
 };
 
+const checklistStatusLabels: Record<ChecklistStatus, string> = {
+  pass: "Pass",
+  review: "Review",
+  not_applicable: "Not applicable",
+};
+
+const checklistStatusClasses: Record<ChecklistStatus, string> = {
+  pass: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  review: "border-amber-200 bg-amber-50 text-amber-700",
+  not_applicable: "border-slate-200 bg-slate-50 text-slate-600",
+};
+
 function ReviewSection({
   children,
   title,
@@ -44,6 +58,51 @@ function ReviewSection({
       </h3>
       {children}
     </section>
+  );
+}
+
+function ChecklistStatusBadge({ status }: { status: ChecklistStatus }) {
+  return (
+    <span
+      className={`shrink-0 rounded-full border px-2 py-0.5 text-[0.7rem] font-semibold ${checklistStatusClasses[status]}`}
+    >
+      {checklistStatusLabels[status]}
+    </span>
+  );
+}
+
+function ReviewChecklist({
+  items,
+}: {
+  items: ReviewChecklistItem[] | undefined;
+}) {
+  if (!items?.length) {
+    return (
+      <p className="mt-2 rounded-lg border border-dashed border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500">
+        Not available for this earlier review.
+      </p>
+    );
+  }
+
+  return (
+    <ul className="mt-2 space-y-2">
+      {items.map((item) => (
+        <li
+          className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2"
+          key={`${item.status}-${item.title}`}
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm font-semibold text-slate-900">
+              {item.title}
+            </p>
+            <ChecklistStatusBadge status={item.status} />
+          </div>
+          <p className="mt-1 text-sm leading-5 text-slate-600">
+            {item.detail}
+          </p>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -226,6 +285,14 @@ export function MockReviewPreview({
           {review.summary}
         </p>
       </ReviewSection>
+
+      <CollapsibleReviewSection defaultExpanded title="Accessibility checklist">
+        <ReviewChecklist items={review.accessibilityChecklist} />
+      </CollapsibleReviewSection>
+
+      <CollapsibleReviewSection defaultExpanded title="Security checklist">
+        <ReviewChecklist items={review.securityChecklist} />
+      </CollapsibleReviewSection>
 
       <CollapsibleReviewSection defaultExpanded title="Findings">
         <FindingsList findings={review.findings} />

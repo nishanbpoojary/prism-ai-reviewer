@@ -16,6 +16,27 @@ import type {
 const geminiReviewModel = "gemini-2.5-flash";
 const geminiReviewerInstructions = `${reviewerInstructions} Keep every field brief enough for the provided JSON schema. Return a complete JSON object only, with no markdown fences and no prose before or after the JSON.`;
 
+const geminiChecklistItemSchema = {
+  type: Type.OBJECT,
+  required: ["title", "status", "detail"],
+  propertyOrdering: ["title", "status", "detail"],
+  properties: {
+    title: {
+      type: Type.STRING,
+      maxLength: "80",
+    },
+    status: {
+      type: Type.STRING,
+      format: "enum",
+      enum: ["pass", "review", "not_applicable"],
+    },
+    detail: {
+      type: Type.STRING,
+      maxLength: "170",
+    },
+  },
+} satisfies Schema;
+
 const geminiReviewSchema = {
   type: Type.OBJECT,
   required: [
@@ -23,6 +44,8 @@ const geminiReviewSchema = {
     "riskLevel",
     "summary",
     "findings",
+    "accessibilityChecklist",
+    "securityChecklist",
     "testCases",
     "suggestedPrDescription",
     "reviewerComments",
@@ -32,6 +55,8 @@ const geminiReviewSchema = {
     "riskLevel",
     "summary",
     "findings",
+    "accessibilityChecklist",
+    "securityChecklist",
     "testCases",
     "suggestedPrDescription",
     "reviewerComments",
@@ -57,6 +82,18 @@ const geminiReviewSchema = {
         type: Type.STRING,
         maxLength: "120",
       },
+    },
+    accessibilityChecklist: {
+      type: Type.ARRAY,
+      minItems: "3",
+      maxItems: "5",
+      items: geminiChecklistItemSchema,
+    },
+    securityChecklist: {
+      type: Type.ARRAY,
+      minItems: "3",
+      maxItems: "5",
+      items: geminiChecklistItemSchema,
     },
     testCases: {
       type: Type.ARRAY,
@@ -100,7 +137,7 @@ export async function generateGeminiPullRequestReview(
       contents: createReviewerPrompt(input),
       config: {
         systemInstruction: geminiReviewerInstructions,
-        maxOutputTokens: 2400,
+        maxOutputTokens: 3200,
         temperature: 0,
         responseMimeType: "application/json",
         responseSchema: geminiReviewSchema,
