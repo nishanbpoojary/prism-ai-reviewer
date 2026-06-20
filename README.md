@@ -6,9 +6,23 @@ The project is built as a focused Next.js application that keeps API keys server
 
 ## Screenshots
 
-> Screenshot placeholder: main PR analysis form and recent review history.
+### AI review overview — Gemini provider
 
-> Screenshot placeholder: generated AI review result with risk score and checklist sections.
+![PRism AI overview with Gemini review](./public/screenshots/prism-ai-overview.png)
+
+PRism AI analyzes a public GitHub pull request, displays repository metadata, risk assessment, findings, test cases, suggested PR description, reviewer comments, and recent review history.
+
+### AI review overview — mock fallback
+
+![PRism AI mock fallback review](./public/screenshots/prism-ai-overview-mock.png)
+
+The app remains usable even when no AI provider is available. It safely falls back to a structured mock review so the complete experience can still be demonstrated.
+
+### Accessibility and security checklists
+
+![PRism AI accessibility and security checklists](./public/screenshots/prism-ai-checklists.png)
+
+Each review includes dedicated accessibility and security checklist sections with clear **Pass**, **Review**, and **Not applicable** statuses.
 
 ## Features
 
