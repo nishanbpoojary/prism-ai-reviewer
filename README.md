@@ -4,6 +4,10 @@ PRism AI is an AI-powered pull request review assistant for developers. Paste a 
 
 The project is built as a focused Next.js application that keeps API keys server-side, uses AI provider fallback gracefully, and stores recent review history locally in the browser.
 
+## Live Demo
+
+[Open PRism AI](https://prism-ai-reviewer.vercel.app/)
+
 ## Screenshots
 
 ### AI review overview — Gemini provider
