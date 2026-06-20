@@ -1,4 +1,5 @@
 import type {
+  ChecklistStatus,
   GitHubPullRequestMetadata,
   GitHubPullRequestRef,
   MockReviewPreview,
@@ -9,6 +10,12 @@ export const reviewSourceLabels: Record<PullRequestReviewSource, string> = {
   openai: "OpenAI",
   gemini: "Gemini",
   mock: "Mock fallback",
+};
+
+const checklistStatusLabels: Record<ChecklistStatus, string> = {
+  pass: "Pass",
+  review: "Review",
+  not_applicable: "Not applicable",
 };
 
 type ReviewReportInput = {
@@ -36,6 +43,22 @@ function createOptionalListSection(title: string, items: string[] | undefined) {
   return items?.length
     ? [`## ${title}`, createMarkdownList(items)].join("\n\n")
     : "";
+}
+
+function createChecklistSection(
+  title: string,
+  items: MockReviewPreview["accessibilityChecklist"],
+) {
+  const content = items?.length
+    ? items
+        .map(
+          (item) =>
+            `- [${checklistStatusLabels[item.status]}] ${item.title}: ${item.detail}`,
+        )
+        .join("\n")
+    : "Not available for this earlier review.";
+
+  return [`## ${title}`, content].join("\n\n");
 }
 
 function sanitizeFilenamePart(value: string) {
@@ -78,6 +101,11 @@ export function createReviewMarkdownReport({
     review.summary,
     "## Findings",
     createMarkdownList(review.findings.map((finding) => finding.text)),
+    createChecklistSection(
+      "Accessibility checklist",
+      review.accessibilityChecklist,
+    ),
+    createChecklistSection("Security checklist", review.securityChecklist),
     createOptionalListSection("Test cases", review.testCases),
     createOptionalSection(
       "Suggested PR description",

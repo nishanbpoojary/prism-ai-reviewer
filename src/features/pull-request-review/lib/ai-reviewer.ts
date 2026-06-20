@@ -44,7 +44,7 @@ async function generateOpenAiPullRequestReview(
       model: openAiReviewModel,
       instructions: reviewerInstructions,
       input: createReviewerPrompt(input),
-      max_output_tokens: 900,
+      max_output_tokens: 1800,
       text: {
         format: {
           type: "json_schema",

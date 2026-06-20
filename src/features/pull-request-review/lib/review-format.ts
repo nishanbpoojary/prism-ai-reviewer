@@ -1,12 +1,16 @@
 import "server-only";
 
 import type {
+  ChecklistStatus,
   MockReviewPreview,
+  ReviewChecklistItem,
   RiskLevel,
 } from "@/features/pull-request-review/types";
 
 const maxSummaryLength = 140;
 const maxFindingLength = 120;
+const maxChecklistTitleLength = 80;
+const maxChecklistDetailLength = 170;
 const maxTestCaseLength = 140;
 const maxSuggestedDescriptionLength = 420;
 const maxReviewerCommentLength = 140;
@@ -18,13 +22,33 @@ type StructuredPullRequestReview = {
   riskLevel: RiskLevel;
   summary: string;
   findings: string[];
+  accessibilityChecklist: ReviewChecklistItem[];
+  securityChecklist: ReviewChecklistItem[];
   testCases: string[];
   suggestedPrDescription: string;
   reviewerComments: string[];
 };
 
 export const reviewerInstructions =
-  "You are a senior frontend and code reviewer. Generate a concise, practical pull request review for recruiters and engineering reviewers. Review only the provided PR metadata and limited diff snippets. Do not claim to inspect the full repository or files that are not included. Mention uncertainty when snippets are limited or patch context is missing. Focus on correctness, edge cases, tests, security, maintainability, and frontend impact. Return only the structured JSON object.";
+  "You are a senior frontend and code reviewer. Generate a concise, practical pull request review for recruiters and engineering reviewers. Review only the provided PR metadata, changed-file summaries, and limited diff snippets. Do not claim to inspect the full repository or files that are not included. Mention uncertainty when snippets are limited or patch context is missing. Focus on correctness, edge cases, tests, security, maintainability, and frontend impact. Include 3 to 5 accessibility checklist items and 3 to 5 security checklist items. Accessibility should consider semantic HTML, keyboard interaction, focus states, labels, form validation messaging, ARIA usage, colour contrast, and responsive behaviour when relevant. Security should consider input validation, authentication and authorization, secrets exposure, API validation, error handling, data exposure, dependency concerns, and unsafe external requests when relevant. Do not invent vulnerabilities, claim full audits, or mark an item as pass unless the supplied context supports it. When evidence is limited, use status review and say manual verification is needed. Return only the structured JSON object.";
+
+const checklistItemJsonSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["title", "status", "detail"],
+  properties: {
+    title: {
+      type: "string",
+    },
+    status: {
+      type: "string",
+      enum: ["pass", "review", "not_applicable"],
+    },
+    detail: {
+      type: "string",
+    },
+  },
+} as const;
 
 export const pullRequestReviewJsonSchema = {
   type: "object",
@@ -34,6 +58,8 @@ export const pullRequestReviewJsonSchema = {
     "riskLevel",
     "summary",
     "findings",
+    "accessibilityChecklist",
+    "securityChecklist",
     "testCases",
     "suggestedPrDescription",
     "reviewerComments",
@@ -55,6 +81,18 @@ export const pullRequestReviewJsonSchema = {
       items: {
         type: "string",
       },
+    },
+    accessibilityChecklist: {
+      type: "array",
+      minItems: 3,
+      maxItems: 5,
+      items: checklistItemJsonSchema,
+    },
+    securityChecklist: {
+      type: "array",
+      minItems: 3,
+      maxItems: 5,
+      items: checklistItemJsonSchema,
     },
     testCases: {
       type: "array",
@@ -78,11 +116,48 @@ function isRiskLevel(value: unknown): value is RiskLevel {
   return value === "Low" || value === "Medium" || value === "High";
 }
 
+function isChecklistStatus(value: unknown): value is ChecklistStatus {
+  return (
+    value === "pass" ||
+    value === "review" ||
+    value === "not_applicable"
+  );
+}
+
 function isNonEmptyStringArray(value: unknown): value is string[] {
   return (
     Array.isArray(value) &&
     value.length > 0 &&
     value.every((item) => typeof item === "string" && item.trim().length > 0)
+  );
+}
+
+function isReviewChecklistItem(value: unknown): value is ReviewChecklistItem {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const item = value as {
+    detail?: unknown;
+    status?: unknown;
+    title?: unknown;
+  };
+
+  return (
+    typeof item.title === "string" &&
+    item.title.trim().length > 0 &&
+    isChecklistStatus(item.status) &&
+    typeof item.detail === "string" &&
+    item.detail.trim().length > 0
+  );
+}
+
+function isReviewChecklist(value: unknown): value is ReviewChecklistItem[] {
+  return (
+    Array.isArray(value) &&
+    value.length >= 3 &&
+    value.length <= 5 &&
+    value.every(isReviewChecklistItem)
   );
 }
 
@@ -94,9 +169,11 @@ function isStructuredPullRequestReview(
   }
 
   const review = value as {
+    accessibilityChecklist?: unknown;
     findings?: unknown;
     riskLevel?: unknown;
     riskScore?: unknown;
+    securityChecklist?: unknown;
     summary?: unknown;
     suggestedPrDescription?: unknown;
     testCases?: unknown;
@@ -112,6 +189,8 @@ function isStructuredPullRequestReview(
     typeof review.summary === "string" &&
     review.summary.trim().length > 0 &&
     isNonEmptyStringArray(review.findings) &&
+    isReviewChecklist(review.accessibilityChecklist) &&
+    isReviewChecklist(review.securityChecklist) &&
     isNonEmptyStringArray(review.testCases) &&
     typeof review.suggestedPrDescription === "string" &&
     review.suggestedPrDescription.trim().length > 0 &&
@@ -172,6 +251,17 @@ function normalizeStringList(
     .slice(0, maxItems);
 }
 
+function normalizeChecklistItems(values: ReviewChecklistItem[]) {
+  return values
+    .map((item) => ({
+      title: limitText(item.title, maxChecklistTitleLength),
+      status: item.status,
+      detail: limitText(item.detail, maxChecklistDetailLength),
+    }))
+    .filter((item) => item.title && item.detail)
+    .slice(0, 5);
+}
+
 function normalizeReview(
   review: StructuredPullRequestReview,
 ): MockReviewPreview {
@@ -189,6 +279,10 @@ function normalizeReview(
     riskLevel: review.riskLevel,
     summary: limitText(review.summary, maxSummaryLength),
     findings,
+    accessibilityChecklist: normalizeChecklistItems(
+      review.accessibilityChecklist,
+    ),
+    securityChecklist: normalizeChecklistItems(review.securityChecklist),
     testCases: normalizeStringList(review.testCases, 4, maxTestCaseLength),
     suggestedPrDescription: limitText(
       review.suggestedPrDescription,

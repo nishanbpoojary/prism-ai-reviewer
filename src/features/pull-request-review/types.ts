@@ -10,11 +10,21 @@ export type MockReviewFinding = {
 
 export type RiskLevel = "Low" | "Medium" | "High";
 
+export type ChecklistStatus = "pass" | "review" | "not_applicable";
+
+export type ReviewChecklistItem = {
+  title: string;
+  status: ChecklistStatus;
+  detail: string;
+};
+
 export type MockReviewPreview = {
   riskScore: number;
   riskLevel: RiskLevel;
   summary: string;
   findings: MockReviewFinding[];
+  accessibilityChecklist?: ReviewChecklistItem[];
+  securityChecklist?: ReviewChecklistItem[];
   testCases?: string[];
   suggestedPrDescription?: string;
   reviewerComments?: string[];
