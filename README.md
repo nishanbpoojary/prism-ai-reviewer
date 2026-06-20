@@ -50,14 +50,16 @@ OpenAI is optional and requires a billed API account. Gemini is currently the ac
 
 ```mermaid
 flowchart LR
-  User[User] --> UI[Next.js UI]
-  UI --> Analyze[/api/analyze]
-  Analyze --> GitHub[GitHub API]
-  GitHub --> Fallback[AI provider fallback]
-  Fallback --> OpenAI[OpenAI]
-  Fallback --> Gemini[Gemini]
-  Fallback --> Mock[Mock fallback]
-  OpenAI --> Result[Review UI + local history]
+  User["User"] --> UI["Next.js UI"]
+  UI --> Analyze["/api/analyze"]
+  Analyze --> GitHub["GitHub API"]
+  GitHub --> Fallback["AI provider fallback"]
+
+  Fallback --> OpenAI["OpenAI"]
+  Fallback --> Gemini["Gemini"]
+  Fallback --> Mock["Mock fallback"]
+
+  OpenAI --> Result["Review UI and local history"]
   Gemini --> Result
   Mock --> Result
 ```
